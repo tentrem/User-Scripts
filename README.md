@@ -1,10 +1,10 @@
-# Collection of my userscripts created with vibe coding
+# Collection of my userscripts created with Vibe coding
 
 ### 1. Google Dorking Toolkit
 
 **File:** `google-dorking-toolkit.user.js`
 
-A comprehensive tool to perform Google Dorking easily and efficiently. This script adds a dedicated panel to the Google search page.
+A simple tool to perform Google Dorking easily and efficiently. This script adds a dedicated panel to the Google search page.
 
 **Key Features:**
 
@@ -17,7 +17,7 @@ A comprehensive tool to perform Google Dorking easily and efficiently. This scri
 
 **File:** `google-search-lenses.user.js`
 
-Brings the best features of the Kagi search engine to Google Search. Gives you full control over what you want to search for.
+Inspiration from the Kagi search engine. Gives you full control over what you want to search for.
 
 **Key Features:**
 
@@ -32,7 +32,7 @@ Brings the best features of the Kagi search engine to Google Search. Gives you f
 
 **File:** `google-search-compare.user.js`
 
-Lightweight productivity script to instantly compare Google search results with other search engines using keyboard shortcuts.
+Lightweight script to instantly compare Google search results with other search engines using keyboard shortcuts.
 
 **Key Features:**
 
