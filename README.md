@@ -17,7 +17,7 @@ A simple tool to perform Google Dorking easily and efficiently. This script adds
 
 **File:** `google-search-lenses.user.js`
 
-Inspiration from the Kagi search engine. Gives you full control over what you want to search for.
+Inspiration from the Kagi search engine. Gives you little improvement over what you want to search for.
 
 **Key Features:**
 
