@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Google Search Enhanced
-// @version      2.0.0
-// @description  Kagi-style enhancements: Lenses, Region, Filetype, Site Block/Boost
-// @author       tentremvibe
+// @version      1.0.0
+// @description  Kagi-style search lenses with clean query bar - no site: operators visible
+// @author       nganuvibe
 // @match        https://www.google.com/search*
 // @match        https://www.google.co.id/search*
 // @grant        GM_addStyle
@@ -30,28 +30,18 @@
     archive: { name: 'Archive', icon: '📜', sites: ['web.archive.org', 'archive.org', 'archive.is', 'archive.ph'] }
   };
 
-  // ============================================
-  // FILETYPE CONFIGURATION
-  // ============================================
   const FILETYPES = {
     '': { name: 'Any', icon: '📁' },
     'pdf': { name: 'PDF', icon: '📕' },
     'doc': { name: 'Word', icon: '📘' },
     'xls': { name: 'Excel', icon: '📗' },
     'ppt': { name: 'PPT', icon: '📙' },
-    'txt': { name: 'Text', icon: '📝' },
     'csv': { name: 'CSV', icon: '📊' },
     'json': { name: 'JSON', icon: '📋' },
-    'xml': { name: 'XML', icon: '📋' },
     'py': { name: 'Python', icon: '🐍' },
-    'js': { name: 'JS', icon: '📜' },
-    'sql': { name: 'SQL', icon: '🗃️' },
-    'md': { name: 'Markdown', icon: '📝' }
+    'js': { name: 'JS', icon: '📜' }
   };
 
-  // ============================================
-  // REGION CONFIGURATION (Shortened)
-  // ============================================
   const REGIONS = {
     '': { name: 'Any Region', icon: '🌍' },
     'countryID': { name: 'Indonesia', icon: '🇮🇩' },
@@ -70,9 +60,6 @@
     'countryBR': { name: 'Brazil', icon: '🇧🇷' }
   };
 
-  // ============================================
-  // DEFAULT BLOCKED/BOOSTED
-  // ============================================
   const DEFAULT_BLOCKED = ['pinterest.com', 'quora.com', 'w3schools.com'];
   const DEFAULT_BOOSTED = ['stackoverflow.com', 'github.com', 'developer.mozilla.org'];
 
@@ -80,156 +67,509 @@
   // STYLES
   // ============================================
   GM_addStyle(`
-        /* Wrapper */
-        .gl-wrapper { display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; }
-        .gl-container { display: inline-flex; align-items: center; position: relative; }
+    .gsl-wrapper { display: inline-flex; align-items: center; gap: 8px; margin-right: 12px; }
+    .gsl-container { display: inline-flex; align-items: center; position: relative; }
 
-        .gl-btn {
-            display: inline-flex; align-items: center; gap: 4px;
-            padding: 6px 12px; color: #bdc1c6; background: transparent;
-            border: none; border-radius: 18px; cursor: pointer;
-            font-family: Google Sans, Roboto, Arial, sans-serif;
-            font-size: 14px; white-space: nowrap; transition: all 0.2s;
-        }
-        .gl-btn:hover { background: rgba(138,180,248,0.08); }
-        .gl-btn.active { color: #8ab4f8; background: rgba(138,180,248,0.1); }
+    /* Kagi-style button - minimalist pill */
+    .gsl-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 14px; color: #9aa0a6;
+      background: #202124; border: 1px solid #3c4043;
+      border-radius: 18px; cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px; white-space: nowrap; transition: all 0.15s;
+    }
+    .gsl-btn:hover { background: #303134; border-color: #5f6368; color: #e8eaed; }
+    .gsl-btn.active {
+      background: #303134; border-color: #5f6368; color: #e8eaed;
+    }
+    .gsl-btn .gsl-toggle {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #5f6368; transition: background 0.15s;
+    }
+    .gsl-btn.active .gsl-toggle { background: #a78bfa; }
+    .gsl-btn .gsl-arrow { font-size: 10px; opacity: 0.6; margin-left: 2px; }
 
-        .gl-dropdown {
-            position: absolute; top: calc(100% + 4px); left: 0;
-            min-width: 180px; max-height: 350px; overflow-y: auto;
-            background: #303134; border: 1px solid #5f6368;
-            border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-            z-index: 99999; opacity: 0; visibility: hidden;
-            transform: translateY(-4px); transition: all 0.15s ease;
-        }
-        .gl-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
-        .gl-dropdown::-webkit-scrollbar { width: 6px; }
-        .gl-dropdown::-webkit-scrollbar-thumb { background: #5f6368; border-radius: 3px; }
+    /* Lens toggle - same style but with toggle indicator */
+    .gsl-lens-toggle {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 14px; color: #9aa0a6;
+      background: #202124; border: 1px solid #3c4043;
+      border-radius: 18px; cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px; white-space: nowrap; transition: all 0.15s;
+    }
+    .gsl-lens-toggle:hover { background: #303134; border-color: #5f6368; color: #e8eaed; }
+    .gsl-lens-toggle.active {
+      background: #303134; border-color: #5f6368; color: #e8eaed;
+    }
+    .gsl-lens-toggle .gsl-toggle {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #5f6368; transition: background 0.15s;
+    }
+    .gsl-lens-toggle.active .gsl-toggle { background: #a78bfa; }
 
-        .gl-search { position: sticky; top: 0; padding: 8px; background: #303134; border-bottom: 1px solid #5f6368; }
-        .gl-search input {
-            width: 100%; padding: 6px 10px; background: #202124;
-            border: 1px solid #5f6368; border-radius: 4px;
-            color: #e8eaed; font-size: 12px; box-sizing: border-box;
-        }
-        .gl-search input:focus { border-color: #8ab4f8; outline: none; }
+    .gsl-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 0;
+      min-width: 180px; max-height: 350px; overflow-y: auto;
+      background: #202124; border: 1px solid #3c4043;
+      border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 99999; opacity: 0; visibility: hidden;
+      transform: translateY(-4px); transition: all 0.15s ease;
+    }
+    .gsl-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    .gsl-dropdown::-webkit-scrollbar { width: 6px; }
+    .gsl-dropdown::-webkit-scrollbar-thumb { background: #3c4043; border-radius: 3px; }
 
-        .gl-item {
-            display: flex; align-items: center; gap: 8px;
-            padding: 8px 12px; color: #e8eaed; font-size: 13px;
-            cursor: pointer; transition: background 0.1s;
-        }
-        .gl-item:hover { background: rgba(138,180,248,0.12); }
-        .gl-item.selected { background: rgba(138,180,248,0.2); color: #8ab4f8; }
-        .gl-item.hidden { display: none; }
-        .gl-icon { width: 18px; text-align: center; }
-        .gl-divider { height: 20px; width: 1px; background: #5f6368; margin: 0 4px; }
-        .gl-clear { margin-left: 4px; font-size: 10px; opacity: 0.7; }
+    .gsl-search { position: sticky; top: 0; padding: 8px; background: #202124; border-bottom: 1px solid #3c4043; }
+    .gsl-search input {
+      width: 100%; padding: 8px 12px; background: #303134;
+      border: 1px solid #3c4043; border-radius: 8px;
+      color: #e8eaed; font-size: 13px; box-sizing: border-box;
+    }
+    .gsl-search input:focus { border-color: #a78bfa; outline: none; }
 
-        /* Site Filter Styles */
-        .gsf-blocked { opacity: 0.25; position: relative; }
-        .gsf-blocked:hover { opacity: 0.5; }
-        .gsf-blocked::after {
-            content: '🚫'; position: absolute; top: 0; right: 0;
-            font-size: 12px; padding: 2px;
-        }
-        .gsf-boosted {
-            border-left: 3px solid #4CAF50 !important;
-            padding-left: 10px !important;
-            background: rgba(76,175,80,0.05) !important;
-        }
-        .gsf-hidden { display: none !important; }
+    .gsl-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; color: #9aa0a6; font-size: 13px;
+      cursor: pointer; transition: all 0.1s;
+    }
+    .gsl-item:hover { background: #303134; color: #e8eaed; }
+    .gsl-item.selected { background: #303134; color: #a78bfa; }
+    .gsl-item.hidden { display: none; }
+    .gsl-icon { width: 20px; text-align: center; font-size: 14px; }
+    .gsl-divider { display: none; }
 
-        .gsf-action {
-            display: inline-block; margin-left: 6px; padding: 2px 5px;
-            background: #303134; border: 1px solid #5f6368; border-radius: 3px;
-            color: #9aa0a6; font-size: 10px; cursor: pointer;
-            opacity: 0; transition: opacity 0.15s;
-        }
-        .g:hover .gsf-action { opacity: 1; }
-        .gsf-action:hover { background: #3c4043; color: #8ab4f8; border-color: #8ab4f8; }
+    /* Site Filter Styles */
+    .gsl-blocked { opacity: 0.25; position: relative; }
+    .gsl-blocked:hover { opacity: 0.5; }
+    .gsl-hidden { display: none !important; }
+    .gsl-boosted {
+      border-left: 3px solid #4CAF50 !important;
+      padding-left: 10px !important;
+      background: rgba(76,175,80,0.05) !important;
+    }
 
-        /* Filter Panel */
-        .gsf-panel {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 400px; max-height: 70vh; background: #303134;
-            border: 1px solid #5f6368; border-radius: 12px;
-            box-shadow: 0 16px 48px rgba(0,0,0,0.5); z-index: 100001; display: none;
-        }
-        .gsf-panel.show { display: block; }
-        .gsf-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6); z-index: 100000; display: none;
-        }
-        .gsf-overlay.show { display: block; }
+    .gsl-action {
+      display: inline-block; margin-left: 6px; padding: 2px 5px;
+      background: #303134; border: 1px solid #5f6368; border-radius: 3px;
+      color: #9aa0a6; font-size: 10px; cursor: pointer;
+      opacity: 0; transition: opacity 0.15s;
+    }
+    .g:hover .gsl-action { opacity: 1; }
+    .gsl-action:hover { background: #3c4043; color: #8ab4f8; border-color: #8ab4f8; }
 
-        .gsf-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 16px; background: #202124; border-bottom: 1px solid #5f6368;
-        }
-        .gsf-title { color: #e8eaed; font-size: 15px; font-weight: 500; }
-        .gsf-close { background: none; border: none; color: #9aa0a6; font-size: 20px; cursor: pointer; }
+    /* Filter Panel */
+    .gsl-panel {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 400px; max-height: 70vh; background: #303134;
+      border: 1px solid #5f6368; border-radius: 12px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5); z-index: 100001; display: none;
+    }
+    .gsl-panel.show { display: block; }
+    .gsl-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); z-index: 100000; display: none;
+    }
+    .gsl-overlay.show { display: block; }
 
-        .gsf-body { padding: 12px; max-height: 45vh; overflow-y: auto; }
-        .gsf-section { margin-bottom: 16px; }
-        .gsf-label { color: #8ab4f8; font-size: 11px; text-transform: uppercase; margin-bottom: 8px; }
+    .gsl-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px; background: #202124; border-bottom: 1px solid #5f6368;
+    }
+    .gsl-title { color: #e8eaed; font-size: 15px; font-weight: 500; }
+    .gsl-close { background: none; border: none; color: #9aa0a6; font-size: 20px; cursor: pointer; }
 
-        .gsf-site {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 6px 8px; background: #202124; border-radius: 4px; margin-bottom: 4px;
-        }
-        .gsf-site-name { color: #e8eaed; font-size: 12px; font-family: monospace; }
-        .gsf-site-del { background: none; border: none; color: #9aa0a6; cursor: pointer; }
-        .gsf-site-del:hover { color: #f44336; }
+    .gsl-body { padding: 12px; max-height: 45vh; overflow-y: auto; }
+    .gsl-section { margin-bottom: 16px; }
+    .gsl-label { color: #8ab4f8; font-size: 11px; text-transform: uppercase; margin-bottom: 8px; }
 
-        .gsf-add { display: flex; gap: 6px; }
-        .gsf-input {
-            flex: 1; padding: 6px 8px; background: #202124; border: 1px solid #5f6368;
-            border-radius: 4px; color: #e8eaed; font-size: 12px;
-        }
-        .gsf-add-btn {
-            padding: 6px 12px; background: #8ab4f8; border: none; border-radius: 4px;
-            color: #202124; font-size: 12px; cursor: pointer;
-        }
-        .gsf-footer {
-            padding: 10px 16px; background: #202124; border-top: 1px solid #5f6368;
-            display: flex; align-items: center; gap: 8px; font-size: 11px; color: #9aa0a6;
-        }
-    `);
+    .gsl-site {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 8px; background: #202124; border-radius: 4px; margin-bottom: 4px;
+    }
+    .gsl-site-name { color: #e8eaed; font-size: 12px; font-family: monospace; }
+    .gsl-site-del { background: none; border: none; color: #9aa0a6; cursor: pointer; }
+    .gsl-site-del:hover { color: #f44336; }
+
+    .gsl-add { display: flex; gap: 6px; }
+    .gsl-input {
+      flex: 1; padding: 6px 8px; background: #202124; border: 1px solid #5f6368;
+      border-radius: 4px; color: #e8eaed; font-size: 12px;
+    }
+    .gsl-add-btn {
+      padding: 6px 12px; background: #8ab4f8; border: none; border-radius: 4px;
+      color: #202124; font-size: 12px; cursor: pointer;
+    }
+    .gsl-footer {
+      padding: 10px 16px; background: #202124; border-top: 1px solid #5f6368;
+      display: flex; align-items: center; gap: 8px; font-size: 11px; color: #9aa0a6;
+    }
+
+    /* ========== MOBILE RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      .gsl-wrapper {
+        flex-wrap: wrap; gap: 6px; margin: 8px 0;
+        width: 100%; justify-content: flex-start;
+      }
+
+      .gsl-btn, .gsl-lens-toggle {
+        padding: 10px 14px; font-size: 14px;
+        min-height: 44px; /* Touch-friendly */
+      }
+
+      .gsl-toggle { width: 12px; height: 12px; }
+
+      .gsl-dropdown {
+        position: fixed !important;
+        top: auto !important; bottom: 0 !important;
+        left: 0 !important; right: 0 !important;
+        width: 100% !important; max-width: 100% !important;
+        min-width: 100% !important;
+        max-height: 60vh;
+        border-radius: 16px 16px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.25s ease;
+      }
+      .gsl-dropdown.show {
+        transform: translateY(0);
+      }
+
+      .gsl-item {
+        padding: 14px 16px; font-size: 15px;
+        min-height: 48px;
+      }
+
+      .gsl-search input {
+        padding: 12px 14px; font-size: 16px;
+        min-height: 44px;
+      }
+
+      /* Filter Panel - Full screen on mobile */
+      .gsl-panel {
+        position: fixed !important;
+        top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+        width: 100% !important; max-width: 100% !important;
+        max-height: 100vh !important;
+        border-radius: 0;
+        transform: none;
+      }
+
+      .gsl-header { padding: 16px; }
+      .gsl-title { font-size: 17px; }
+      .gsl-close { font-size: 28px; padding: 8px; }
+
+      .gsl-body { padding: 16px; max-height: calc(100vh - 140px); }
+      .gsl-label { font-size: 13px; margin-bottom: 10px; }
+
+      .gsl-site {
+        padding: 12px; margin-bottom: 8px;
+      }
+      .gsl-site-name { font-size: 14px; }
+      .gsl-site-del { font-size: 20px; padding: 8px; }
+
+      .gsl-input { padding: 12px; font-size: 16px; min-height: 44px; }
+      .gsl-add-btn { padding: 12px 16px; font-size: 14px; min-height: 44px; }
+
+      .gsl-footer { padding: 16px; font-size: 14px; }
+      .gsl-footer input[type="checkbox"] {
+        width: 20px; height: 20px;
+      }
+    }
+
+    /* Extra small screens */
+    @media (max-width: 400px) {
+      .gsl-btn, .gsl-lens-toggle {
+        padding: 8px 10px; font-size: 13px;
+      }
+    }
+  `);
 
   // ============================================
-  // UTILITY FUNCTIONS
+  // STATE - Store lens in URL param + sessionStorage for persistence
   // ============================================
-  const getQuery = () => new URLSearchParams(window.location.search).get('q') || '';
-  const getRegion = () => new URLSearchParams(window.location.search).get('cr') || '';
-  const getFiletype = () => { const m = getQuery().match(/filetype:(\S+)/i); return m ? m[1] : ''; };
+  const LENS_PARAM = 'gsl_lens';
+  const FT_PARAM = 'gsl_ft';
+  const STORAGE_KEY = 'gsl_active_lens';
+  const FT_STORAGE_KEY = 'gsl_active_ft';
 
-  const cleanQuery = q => q.replace(/\(?(site:\S+\s*(OR\s*)?)+\)?/gi, '').replace(/filetype:\S+/gi, '').replace(/\s+/g, ' ').trim();
+  function getCurrentLens() {
+    return new URLSearchParams(window.location.search).get(LENS_PARAM) || 'all';
+  }
 
-  const buildQuery = (q, lensKey, filetype) => {
+  function getCurrentFiletype() {
+    return new URLSearchParams(window.location.search).get(FT_PARAM) || '';
+  }
+
+  function getRegion() {
+    return new URLSearchParams(window.location.search).get('cr') || '';
+  }
+
+  function getRawQuery() {
+    return new URLSearchParams(window.location.search).get('q') || '';
+  }
+
+  // Save active lens to sessionStorage
+  function saveLensToStorage(lens, ft) {
+    if (lens && lens !== 'all') {
+      sessionStorage.setItem(STORAGE_KEY, lens);
+    } else {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+    if (ft) {
+      sessionStorage.setItem(FT_STORAGE_KEY, ft);
+    } else {
+      sessionStorage.removeItem(FT_STORAGE_KEY);
+    }
+  }
+
+  // Get saved lens from sessionStorage
+  function getSavedLens() {
+    return sessionStorage.getItem(STORAGE_KEY) || 'all';
+  }
+
+  function getSavedFiletype() {
+    return sessionStorage.getItem(FT_STORAGE_KEY) || '';
+  }
+
+  // Auto-restore lens on page load if URL doesn't have it
+  function autoRestoreLens() {
+    const urlLens = new URLSearchParams(window.location.search).get(LENS_PARAM);
+    const urlFt = new URLSearchParams(window.location.search).get(FT_PARAM);
+    const savedLens = getSavedLens();
+    const savedFt = getSavedFiletype();
+
+    // Prevent redirect loop - check if we just redirected
+    const lastRedirect = sessionStorage.getItem('gsl_last_redirect');
+    const now = Date.now();
+    if (lastRedirect && (now - parseInt(lastRedirect)) < 2000) {
+      // Redirected less than 2 seconds ago, skip to prevent loop
+      return false;
+    }
+
+    // If URL has no lens but we have a saved one, redirect to apply it
+    if (!urlLens && savedLens !== 'all') {
+      const query = getCleanQuery();
+      if (query) {
+        // Mark that we're about to redirect
+        sessionStorage.setItem('gsl_last_redirect', now.toString());
+        navigate(query, savedLens, savedFt || '');
+        return true; // Will redirect
+      }
+    }
+
+    // Sync: save current URL lens to storage
+    saveLensToStorage(urlLens || 'all', urlFt || '');
+    return false;
+  }
+
+  // Clean query - remove any site: or filetype: operators we might have added
+  function getCleanQuery() {
+    let q = getRawQuery();
+    // Remove site: operators that match our lenses
+    q = q.replace(/\(?(site:\S+\s*(OR\s*)?)+\)?/gi, '');
+    // Remove filetype:
+    q = q.replace(/filetype:\S+/gi, '');
+    return q.replace(/\s+/g, ' ').trim();
+  }
+
+  // Build the actual search query with lens applied
+  function buildSearchQuery(cleanQuery, lensKey, filetype) {
+    let q = cleanQuery;
     if (lensKey && lensKey !== 'all') {
       const lens = LENSES[lensKey];
-      if (lens.sites?.length) q += ` (${lens.sites.map(s => `site:${s}`).join(' OR ')})`;
+      if (lens.sites?.length) {
+        q += ` (${lens.sites.map(s => `site:${s}`).join(' OR ')})`;
+      }
     }
-    if (filetype) q += ` filetype:${filetype}`;
+    if (filetype) {
+      q += ` filetype:${filetype}`;
+    }
     return q;
-  };
+  }
 
-  const detectLens = () => {
-    const q = getQuery();
-    for (const [k, v] of Object.entries(LENSES)) {
-      if (k === 'all') continue;
-      if (v.sites?.some(s => q.includes(`site:${s}`))) return k;
+  // Navigate with CLEAN URL - remove all unnecessary params
+  function navigate(cleanQuery, lensKey, filetype, region = null) {
+    // Save lens to storage before navigation
+    saveLensToStorage(lensKey, filetype);
+
+    // Build fresh URL with only essential params
+    const baseUrl = window.location.origin + '/search';
+    const url = new URL(baseUrl);
+
+    // Build actual query with filters
+    const fullQuery = buildSearchQuery(cleanQuery, lensKey, filetype);
+    url.searchParams.set('q', fullQuery);
+
+    // Store lens/filetype selection in custom params
+    if (lensKey && lensKey !== 'all') {
+      url.searchParams.set(LENS_PARAM, lensKey);
     }
-    return 'all';
-  };
 
-  const navigate = (query, region = null) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('q', query);
-    if (region !== null) region === '' ? url.searchParams.delete('cr') : url.searchParams.set('cr', region);
+    if (filetype) {
+      url.searchParams.set(FT_PARAM, filetype);
+    }
+
+    // Preserve region if set
+    const currentRegion = region !== null ? region : getRegion();
+    if (currentRegion) {
+      url.searchParams.set('cr', currentRegion);
+    }
+
     window.location.href = url.toString();
-  };
+  }
+
+  // ============================================
+  // CLEAN THE SEARCH BAR (KEY FEATURE!)
+  // ============================================
+  let searchBarCleaned = false;
+  let formHooked = false;
+
+  function cleanSearchBar() {
+    const searchInput = document.querySelector('textarea[name="q"], input[name="q"]');
+    if (!searchInput) return;
+
+    // Clean function to remove site: operators from input value
+    const cleanInputValue = () => {
+      const currentValue = searchInput.value;
+      const cleaned = currentValue
+        .replace(/\(?(site:\S+\s*(OR\s*)?)+\)?/gi, '')
+        .replace(/filetype:\S+/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (currentValue !== cleaned) {
+        // Preserve cursor position
+        const cursorPos = searchInput.selectionStart;
+        const diff = currentValue.length - cleaned.length;
+        searchInput.value = cleaned;
+        // Restore cursor, adjusted for removed characters
+        const newPos = Math.max(0, cursorPos - diff);
+        searchInput.setSelectionRange(newPos, newPos);
+      }
+    };
+
+    // Clean on initial load if not focused
+    if (!searchBarCleaned && document.activeElement !== searchInput) {
+      cleanInputValue();
+      searchBarCleaned = true;
+    }
+
+    // Hook form and input to preserve lens on submit
+    if (!formHooked) {
+      formHooked = true;
+
+      // Clean when user focuses on search bar
+      searchInput.addEventListener('focus', () => {
+        setTimeout(cleanInputValue, 10);
+      });
+
+      // Clean as user types (debounced)
+      let cleanTimeout;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(cleanTimeout);
+        cleanTimeout = setTimeout(() => {
+          // Only clean if there are site: operators (don't interrupt normal typing)
+          if (/site:/i.test(searchInput.value)) {
+            cleanInputValue();
+          }
+        }, 100);
+      });
+
+      // Intercept Enter key on search input
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          // Clean before navigate
+          const userQuery = searchInput.value
+            .replace(/\(?(site:\S+\s*(OR\s*)?)+\)?/gi, '')
+            .replace(/filetype:\S+/gi, '')
+            .trim();
+          if (userQuery) {
+            navigate(userQuery, getCurrentLens(), getCurrentFiletype());
+          }
+        }
+      }, true); // Use capture phase to intercept before Google
+
+      // Also hook the form submit
+      const form = searchInput.closest('form');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const userQuery = searchInput.value
+            .replace(/\(?(site:\S+\s*(OR\s*)?)+\)?/gi, '')
+            .replace(/filetype:\S+/gi, '')
+            .trim();
+          if (userQuery) {
+            navigate(userQuery, getCurrentLens(), getCurrentFiletype());
+          }
+        }, true);
+      }
+
+      // Intercept any search button clicks
+      document.querySelectorAll('button[type="submit"], button[aria-label*="earch"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const currentInput = document.querySelector('textarea[name="q"], input[name="q"]');
+          if (currentInput && getCurrentLens() !== 'all') {
+            e.preventDefault();
+            e.stopPropagation();
+            const userQuery = currentInput.value
+              .replace(/\(?(site:\S+\s*(OR\s*)?)+\)?/gi, '')
+              .replace(/filetype:\S+/gi, '')
+              .trim();
+            navigate(userQuery, getCurrentLens(), getCurrentFiletype());
+          }
+        }, true);
+      });
+
+      // Watch for navigation attempts and intercept to preserve lens
+      // This catches suggestion clicks, voice search, etc.
+      const originalPushState = history.pushState;
+      const originalReplaceState = history.replaceState;
+
+      const interceptNavigation = (url) => {
+        if (getCurrentLens() === 'all' && getCurrentFiletype() === '') return false;
+
+        try {
+          const parsedUrl = new URL(url, window.location.origin);
+          if (parsedUrl.pathname === '/search' && parsedUrl.searchParams.has('q')) {
+            let query = parsedUrl.searchParams.get('q');
+            // Clean any existing site: operators
+            query = query.replace(/\(?(site:\S+\s*(OR\s*)?)+\)?/gi, '').replace(/filetype:\S+/gi, '').trim();
+            if (query && !parsedUrl.searchParams.has(LENS_PARAM)) {
+              navigate(query, getCurrentLens(), getCurrentFiletype());
+              return true; // Navigation intercepted
+            }
+          }
+        } catch (e) { /* ignore */ }
+        return false;
+      };
+
+      history.pushState = function (...args) {
+        if (args[2] && interceptNavigation(args[2])) return;
+        return originalPushState.apply(this, args);
+      };
+
+      history.replaceState = function (...args) {
+        if (args[2] && interceptNavigation(args[2])) return;
+        return originalReplaceState.apply(this, args);
+      };
+
+      // Also intercept link clicks to /search
+      document.addEventListener('click', (e) => {
+        if (getCurrentLens() === 'all' && getCurrentFiletype() === '') return;
+
+        const link = e.target.closest('a[href*="/search?"]');
+        if (link && link.href) {
+          if (interceptNavigation(link.href)) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      }, true);
+    }
+  }
 
   // Site Filter Data
   const getBlocked = () => { try { return JSON.parse(GM_getValue('blocked', JSON.stringify(DEFAULT_BLOCKED))); } catch { return [...DEFAULT_BLOCKED]; } };
@@ -241,48 +581,81 @@
 
   const extractDomain = url => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return null; } };
   const matchDomain = (d, p) => d && p && (d === p || d.endsWith('.' + p));
-  const isBlocked = d => getBlocked().some(s => matchDomain(d, s));
-  const isBoosted = d => getBoosted().some(s => matchDomain(d, s));
 
   // ============================================
   // UI BUILDERS
   // ============================================
-  const closeAll = () => document.querySelectorAll('.gl-dropdown.show').forEach(d => d.classList.remove('show'));
+  const closeAll = () => document.querySelectorAll('.gsl-dropdown.show').forEach(d => d.classList.remove('show'));
 
-  function createDropdown(id, label, items, current, onSelect, searchable = false) {
+  function createLensButton(currentLens) {
     const c = document.createElement('div');
-    c.className = 'gl-container';
+    c.className = 'gsl-container';
+
+    const isActive = currentLens !== 'all';
+    const data = LENSES[currentLens];
+
+    const btn = document.createElement('button');
+    btn.className = `gsl-lens-toggle ${isActive ? 'active' : ''}`;
+    btn.innerHTML = `<span class="gsl-toggle"></span><span>${isActive ? data.name : 'Lenses'}</span><span class="gsl-arrow">▾</span>`;
+
+    const dd = document.createElement('div');
+    dd.className = 'gsl-dropdown';
+
+    Object.entries(LENSES).forEach(([k, v]) => {
+      const item = document.createElement('div');
+      item.className = `gsl-item ${currentLens === k ? 'selected' : ''}`;
+      item.dataset.key = k;
+      item.innerHTML = `<span class="gsl-icon">${v.icon || '○'}</span><span>${v.name}</span>`;
+      item.addEventListener('click', () => {
+        navigate(getCleanQuery(), k, getCurrentFiletype());
+        closeAll();
+      });
+      dd.appendChild(item);
+    });
+
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      closeAll();
+      dd.classList.toggle('show');
+    });
+
+    c.appendChild(btn);
+    c.appendChild(dd);
+    return c;
+  }
+
+  function createDropdown(label, items, current, onSelect, searchable = false) {
+    const c = document.createElement('div');
+    c.className = 'gsl-container';
 
     const isActive = current !== '' && current !== 'all';
     const data = items[current] || items[''] || items['all'];
 
     const btn = document.createElement('button');
-    btn.className = `gl-btn ${isActive ? 'active' : ''}`;
-    btn.innerHTML = isActive
-      ? `<span>${data.icon || ''}</span><span>${data.name}</span><span class="gl-clear" data-clear>✕</span>`
-      : `${data?.icon || '📌'} ${label} ▾`;
+    btn.className = `gsl-btn ${isActive ? 'active' : ''}`;
+    btn.innerHTML = `<span class="gsl-toggle"></span><span>${isActive ? data.name : label}</span><span class="gsl-arrow">▾</span>`;
 
     const dd = document.createElement('div');
-    dd.className = 'gl-dropdown';
+    dd.className = 'gsl-dropdown';
 
     if (searchable) {
       const s = document.createElement('div');
-      s.className = 'gl-search';
+      s.className = 'gsl-search';
       s.innerHTML = `<input type="text" placeholder="Search...">`;
       dd.appendChild(s);
       s.querySelector('input').addEventListener('input', e => {
         const q = e.target.value.toLowerCase();
-        dd.querySelectorAll('.gl-item').forEach(i => i.classList.toggle('hidden', !i.dataset.name.includes(q)));
+        dd.querySelectorAll('.gsl-item').forEach(i => i.classList.toggle('hidden', !i.dataset.name.includes(q)));
       });
       s.addEventListener('click', e => e.stopPropagation());
     }
 
     Object.entries(items).forEach(([k, v]) => {
       const item = document.createElement('div');
-      item.className = `gl-item ${current === k ? 'selected' : ''}`;
+      item.className = `gsl-item ${current === k ? 'selected' : ''}`;
       item.dataset.key = k;
       item.dataset.name = v.name.toLowerCase();
-      item.innerHTML = `<span class="gl-icon">${v.icon || '○'}</span><span>${v.name}</span>`;
+      item.innerHTML = `<span class="gsl-icon">${v.icon || '○'}</span><span>${v.name}</span>`;
       item.addEventListener('click', () => { onSelect(k); closeAll(); });
       dd.appendChild(item);
     });
@@ -304,48 +677,48 @@
   // ============================================
   function createFilterPanel() {
     const overlay = document.createElement('div');
-    overlay.className = 'gsf-overlay';
-    overlay.id = 'gsf-overlay';
+    overlay.className = 'gsl-overlay';
+    overlay.id = 'gsl-overlay';
 
     const panel = document.createElement('div');
-    panel.className = 'gsf-panel';
-    panel.id = 'gsf-panel';
+    panel.className = 'gsl-panel';
+    panel.id = 'gsl-panel';
     panel.innerHTML = `
-            <div class="gsf-header">
-                <span class="gsf-title">🔧 Site Filter</span>
-                <button class="gsf-close">×</button>
-            </div>
-            <div class="gsf-body">
-                <div class="gsf-section">
-                    <div class="gsf-label">🚫 Blocked</div>
-                    <div id="gsf-blocked"></div>
-                    <div class="gsf-add">
-                        <input class="gsf-input" id="gsf-blocked-in" placeholder="domain.com">
-                        <button class="gsf-add-btn" id="gsf-blocked-add">+</button>
-                    </div>
-                </div>
-                <div class="gsf-section">
-                    <div class="gsf-label">⭐ Boosted</div>
-                    <div id="gsf-boosted"></div>
-                    <div class="gsf-add">
-                        <input class="gsf-input" id="gsf-boosted-in" placeholder="domain.com">
-                        <button class="gsf-add-btn" id="gsf-boosted-add">+</button>
-                    </div>
-                </div>
-            </div>
-            <div class="gsf-footer">
-                <input type="checkbox" id="gsf-hide"> <label for="gsf-hide">Hide blocked completely</label>
-            </div>
-        `;
+      <div class="gsl-header">
+        <span class="gsl-title">🔧 Site Filter</span>
+        <button class="gsl-close">×</button>
+      </div>
+      <div class="gsl-body">
+        <div class="gsl-section">
+          <div class="gsl-label">🚫 Blocked</div>
+          <div id="gsl-blocked"></div>
+          <div class="gsl-add">
+            <input class="gsl-input" id="gsl-blocked-in" placeholder="domain.com">
+            <button class="gsl-add-btn" id="gsl-blocked-add">+</button>
+          </div>
+        </div>
+        <div class="gsl-section">
+          <div class="gsl-label">⭐ Boosted</div>
+          <div id="gsl-boosted"></div>
+          <div class="gsl-add">
+            <input class="gsl-input" id="gsl-boosted-in" placeholder="domain.com">
+            <button class="gsl-add-btn" id="gsl-boosted-add">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="gsl-footer">
+        <input type="checkbox" id="gsl-hide"> <label for="gsl-hide">Hide blocked completely</label>
+      </div>
+    `;
 
     document.body.appendChild(overlay);
     document.body.appendChild(panel);
 
-    panel.querySelector('.gsf-close').addEventListener('click', closePanel);
+    panel.querySelector('.gsl-close').addEventListener('click', closePanel);
     overlay.addEventListener('click', closePanel);
 
-    panel.querySelector('#gsf-blocked-add').addEventListener('click', () => {
-      const inp = panel.querySelector('#gsf-blocked-in');
+    panel.querySelector('#gsl-blocked-add').addEventListener('click', () => {
+      const inp = panel.querySelector('#gsl-blocked-in');
       if (inp.value.trim()) {
         const b = getBlocked(); b.push(inp.value.trim()); saveBlocked(b);
         saveBoosted(getBoosted().filter(s => s !== inp.value.trim()));
@@ -353,8 +726,8 @@
       }
     });
 
-    panel.querySelector('#gsf-boosted-add').addEventListener('click', () => {
-      const inp = panel.querySelector('#gsf-boosted-in');
+    panel.querySelector('#gsl-boosted-add').addEventListener('click', () => {
+      const inp = panel.querySelector('#gsl-boosted-in');
       if (inp.value.trim()) {
         const b = getBoosted(); b.push(inp.value.trim()); saveBoosted(b);
         saveBlocked(getBlocked().filter(s => s !== inp.value.trim()));
@@ -362,31 +735,31 @@
       }
     });
 
-    panel.querySelector('#gsf-hide').addEventListener('change', e => {
+    panel.querySelector('#gsl-hide').addEventListener('change', e => {
       saveHideBlocked(e.target.checked);
       processResults();
     });
   }
 
   function renderPanel() {
-    const bl = document.getElementById('gsf-blocked');
-    const bo = document.getElementById('gsf-boosted');
-    const hide = document.getElementById('gsf-hide');
+    const bl = document.getElementById('gsl-blocked');
+    const bo = document.getElementById('gsl-boosted');
+    const hide = document.getElementById('gsl-hide');
 
-    bl.innerHTML = getBlocked().map(s => `<div class="gsf-site"><span class="gsf-site-name">${s}</span><button class="gsf-site-del" data-s="${s}" data-t="b">×</button></div>`).join('') || '<div style="color:#5f6368;font-size:11px;">None</div>';
-    bo.innerHTML = getBoosted().map(s => `<div class="gsf-site"><span class="gsf-site-name">${s}</span><button class="gsf-site-del" data-s="${s}" data-t="o">×</button></div>`).join('') || '<div style="color:#5f6368;font-size:11px;">None</div>';
+    bl.innerHTML = getBlocked().map(s => `<div class="gsl-site"><span class="gsl-site-name">${s}</span><button class="gsl-site-del" data-s="${s}" data-t="b">×</button></div>`).join('') || '<div style="color:#5f6368;font-size:11px;">None</div>';
+    bo.innerHTML = getBoosted().map(s => `<div class="gsl-site"><span class="gsl-site-name">${s}</span><button class="gsl-site-del" data-s="${s}" data-t="o">×</button></div>`).join('') || '<div style="color:#5f6368;font-size:11px;">None</div>';
     hide.checked = getHideBlocked();
 
-    bl.querySelectorAll('.gsf-site-del').forEach(b => b.addEventListener('click', () => {
+    bl.querySelectorAll('.gsl-site-del').forEach(b => b.addEventListener('click', () => {
       saveBlocked(getBlocked().filter(x => x !== b.dataset.s)); renderPanel(); processResults();
     }));
-    bo.querySelectorAll('.gsf-site-del').forEach(b => b.addEventListener('click', () => {
+    bo.querySelectorAll('.gsl-site-del').forEach(b => b.addEventListener('click', () => {
       saveBoosted(getBoosted().filter(x => x !== b.dataset.s)); renderPanel(); processResults();
     }));
   }
 
-  const openPanel = () => { renderPanel(); document.getElementById('gsf-overlay').classList.add('show'); document.getElementById('gsf-panel').classList.add('show'); };
-  const closePanel = () => { document.getElementById('gsf-overlay').classList.remove('show'); document.getElementById('gsf-panel').classList.remove('show'); };
+  const openPanel = () => { renderPanel(); document.getElementById('gsl-overlay').classList.add('show'); document.getElementById('gsl-panel').classList.add('show'); };
+  const closePanel = () => { document.getElementById('gsl-overlay').classList.remove('show'); document.getElementById('gsl-panel').classList.remove('show'); };
 
   // ============================================
   // PROCESS SEARCH RESULTS
@@ -396,26 +769,20 @@
     const blocked = getBlocked();
     const boosted = getBoosted();
 
-    // Target only actual search result items (must have cite element = actual result)
-    // This avoids blocking AI Overview, Knowledge Panel, and other Google features
     document.querySelectorAll('#search .g, #rso .g, .MjjYud').forEach(r => {
-      // Skip if already processed
-      if (r.dataset.gsfDone === 'true') return;
+      if (r.dataset.gslDone === 'true') return;
 
-      // MUST have a cite element - this indicates it's an actual search result
       const cite = r.querySelector('cite');
       if (!cite) return;
 
-      // Skip if inside AI Overview or special Google features
-      if (r.closest('[data-attrid="wa:/description"]') ||  // AI Overview
-        r.closest('.kp-wholepage') ||                     // Knowledge Panel
-        r.closest('.ULSxyf') ||                           // AI Mode container
-        r.closest('.M8OgIe') ||                           // Featured snippet wrapper
-        r.closest('.related-question-pair')) {            // People also ask
+      if (r.closest('[data-attrid="wa:/description"]') ||
+        r.closest('.kp-wholepage') ||
+        r.closest('.ULSxyf') ||
+        r.closest('.M8OgIe') ||
+        r.closest('.related-question-pair')) {
         return;
       }
 
-      // Find the main link (first http link)
       const mainLink = r.querySelector('a[href^="http"]');
       if (!mainLink) return;
 
@@ -427,27 +794,26 @@
 
       if (!isBlockedResult && !isBoostedResult) return;
 
-      r.dataset.gsfDone = 'true';
-      r.classList.remove('gsf-blocked', 'gsf-boosted', 'gsf-hidden');
+      r.dataset.gslDone = 'true';
+      r.classList.remove('gsl-blocked', 'gsl-boosted', 'gsl-hidden');
 
       if (isBlockedResult) {
         if (hide) {
           r.style.display = 'none';
-          r.classList.add('gsf-hidden');
+          r.classList.add('gsl-hidden');
         } else {
           r.style.display = '';
-          r.classList.add('gsf-blocked');
+          r.classList.add('gsl-blocked');
         }
       } else if (isBoostedResult) {
         r.style.display = '';
-        r.classList.add('gsf-boosted');
+        r.classList.add('gsl-boosted');
       }
 
-      // Quick action button
-      if (cite && !cite.querySelector('.gsf-action')) {
-        const domain = d; // Store domain for closure
+      if (cite && !cite.querySelector('.gsl-action')) {
+        const domain = d;
         const btn = document.createElement('span');
-        btn.className = 'gsf-action';
+        btn.className = 'gsl-action';
         btn.textContent = '⚙';
         btn.title = 'Block/Boost';
         btn.addEventListener('click', ev => {
@@ -456,8 +822,7 @@
           if (action === 'b') { const bl = getBlocked(); bl.push(domain); saveBlocked(bl); saveBoosted(getBoosted().filter(x => x !== domain)); }
           else if (action === 'o') { const bo = getBoosted(); bo.push(domain); saveBoosted(bo); saveBlocked(getBlocked().filter(x => x !== domain)); }
           else if (action === 'r') { saveBlocked(getBlocked().filter(x => x !== domain)); saveBoosted(getBoosted().filter(x => x !== domain)); }
-          // Reset all processed flags and reprocess
-          document.querySelectorAll('[data-gsf-done]').forEach(el => el.dataset.gsfDone = '');
+          document.querySelectorAll('[data-gsl-done]').forEach(el => el.dataset.gslDone = '');
           processResults();
         });
         cite.appendChild(btn);
@@ -469,43 +834,43 @@
   // INJECTION
   // ============================================
   function inject() {
-    if (document.querySelector('.gl-wrapper')) return;
+    if (document.querySelector('.gsl-wrapper')) return;
 
     const nav = document.querySelector('div[role="navigation"] > div:first-child') ||
       document.querySelector('.crJ18e') || document.querySelector('.IUOThf');
     if (!nav) { setTimeout(inject, 500); return; }
 
-    const lens = detectLens(), region = getRegion(), ft = getFiletype();
+    const currentLens = getCurrentLens();
+    const region = getRegion();
+    const ft = getCurrentFiletype();
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'gl-wrapper';
+    wrapper.className = 'gsl-wrapper';
 
-    // Lenses
-    wrapper.appendChild(createDropdown('lens', 'Lenses', LENSES, lens, k => {
-      navigate(buildQuery(cleanQuery(getQuery()), k, getFiletype()));
-    }));
+    // Lens toggle (Kagi-style)
+    wrapper.appendChild(createLensButton(currentLens));
 
-    wrapper.appendChild(Object.assign(document.createElement('div'), { className: 'gl-divider' }));
+    wrapper.appendChild(Object.assign(document.createElement('div'), { className: 'gsl-divider' }));
 
     // Region
-    wrapper.appendChild(createDropdown('region', 'Region', REGIONS, region, k => {
+    wrapper.appendChild(createDropdown('Region', REGIONS, region, k => {
       const url = new URL(window.location.href);
       k === '' ? url.searchParams.delete('cr') : url.searchParams.set('cr', k);
       window.location.href = url.toString();
     }, true));
 
-    wrapper.appendChild(Object.assign(document.createElement('div'), { className: 'gl-divider' }));
+    wrapper.appendChild(Object.assign(document.createElement('div'), { className: 'gsl-divider' }));
 
     // Filetype
-    wrapper.appendChild(createDropdown('ft', 'Filetype', FILETYPES, ft, k => {
-      navigate(buildQuery(cleanQuery(getQuery()), detectLens(), k));
+    wrapper.appendChild(createDropdown('Filetype', FILETYPES, ft, k => {
+      navigate(getCleanQuery(), currentLens, k);
     }, true));
 
-    wrapper.appendChild(Object.assign(document.createElement('div'), { className: 'gl-divider' }));
+    wrapper.appendChild(Object.assign(document.createElement('div'), { className: 'gsl-divider' }));
 
     // Filter button
     const filterBtn = document.createElement('button');
-    filterBtn.className = 'gl-btn';
+    filterBtn.className = 'gsl-btn';
     filterBtn.innerHTML = '🔧 Filter';
     filterBtn.addEventListener('click', openPanel);
     wrapper.appendChild(filterBtn);
@@ -516,14 +881,24 @@
 
     createFilterPanel();
     processResults();
+
+    // CLEAN THE SEARCH BAR!
+    cleanSearchBar();
   }
 
   // ============================================
   // INIT
   // ============================================
+  // First, check if we need to restore lens from sessionStorage
+  if (autoRestoreLens()) {
+    // Will redirect, don't continue
+    return;
+  }
+
   setTimeout(inject, 300);
   new MutationObserver(() => {
-    if (!document.querySelector('.gl-wrapper')) setTimeout(inject, 100);
+    if (!document.querySelector('.gsl-wrapper')) setTimeout(inject, 100);
+    cleanSearchBar(); // Keep cleaning the search bar
     processResults();
   }).observe(document.body, { childList: true, subtree: true });
 })();

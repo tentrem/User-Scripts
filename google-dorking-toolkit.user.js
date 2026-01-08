@@ -102,33 +102,37 @@
         .gd-btn {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 6px 12px;
-            color: #bdc1c6;
-            background: transparent;
-            border: none;
+            gap: 8px;
+            padding: 7px 14px;
+            color: #9aa0a6;
+            background: #202124;
+            border: 1px solid #3c4043;
             border-radius: 18px;
             cursor: pointer;
-            font-family: Google Sans, Roboto, Arial, sans-serif;
-            font-size: 14px;
-            line-height: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
             white-space: nowrap;
-            transition: all 0.2s;
+            transition: all 0.15s;
         }
 
-        .gd-btn:hover { background: rgba(138,180,248,0.08); }
-        .gd-btn.active { color: #8ab4f8; background: rgba(138,180,248,0.1); }
+        .gd-btn:hover { background: #303134; border-color: #5f6368; color: #e8eaed; }
+        .gd-btn.active { background: #303134; border-color: #5f6368; color: #e8eaed; }
+        .gd-btn .gd-toggle {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #5f6368; transition: background 0.15s;
+        }
+        .gd-btn.active .gd-toggle { background: #a78bfa; }
 
         /* Main Panel */
         .gd-panel {
             position: absolute;
-            top: calc(100% + 8px);
+            top: calc(100% + 6px);
             left: 0;
-            width: 420px;
-            background: #303134;
-            border: 1px solid #5f6368;
+            width: 380px;
+            background: #202124;
+            border: 1px solid #3c4043;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
             z-index: 99999;
             display: none;
             overflow: hidden;
@@ -147,7 +151,7 @@
         }
 
         .gd-panel-title {
-            color: #8ab4f8;
+            color: #e8eaed;
             font-size: 14px;
             font-weight: 500;
         }
@@ -184,19 +188,16 @@
             transition: all 0.15s;
         }
 
-        .gd-tab:hover, .gd-tab.active {
-            background: rgba(138,180,248,0.15);
-            border-color: #8ab4f8;
-            color: #8ab4f8;
-        }
+        .gd-tab:hover { background: #303134; border-color: #5f6368; color: #e8eaed; }
+        .gd-tab.active { background: #303134; border-color: #5f6368; color: #a78bfa; }
 
-        /* Quick Operators */
+        /* Quick Operators - Minimal style */
         .gd-operators {
             display: flex;
             flex-wrap: wrap;
-            gap: 4px;
-            padding: 10px 12px;
-            background: #252527;
+            gap: 6px;
+            padding: 12px 14px;
+            background: #202124;
             border-bottom: 1px solid #3c4043;
         }
 
@@ -214,14 +215,15 @@
 
         .gd-op-btn:hover {
             background: #3c4043;
-            border-color: #8ab4f8;
-            color: #8ab4f8;
+            border-color: #a78bfa;
+            color: #a78bfa;
         }
 
-        /* Dork Items */
+        /* Dork Items - Clean list */
         .gd-dorks {
-            max-height: 280px;
+            max-height: 260px;
             overflow-y: auto;
+            background: #202124;
         }
 
         .gd-dork-item {
@@ -243,10 +245,10 @@
         }
 
         .gd-dork-query {
-            color: #8ab4f8;
+            color: #a78bfa;
             font-size: 11px;
-            font-family: 'Roboto Mono', monospace;
-            margin-top: 3px;
+            font-family: 'SF Mono', 'Consolas', monospace;
+            margin-top: 4px;
             word-break: break-all;
         }
 
@@ -277,13 +279,13 @@
         }
 
         .gd-action-btn.primary {
-            background: #8ab4f8;
+            background: #a78bfa;
             color: #202124;
-            border-color: #8ab4f8;
+            border-color: #a78bfa;
         }
 
         .gd-action-btn.primary:hover {
-            background: #aecbfa;
+            background: #c4b5fd;
         }
 
         /* Modal Overlay */
@@ -304,8 +306,9 @@
 
         .gd-modal {
             width: 90%;
-            max-width: 500px;
-            background: #303134;
+            max-width: 480px;
+            background: #202124;
+            border: 1px solid #3c4043;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 16px 48px rgba(0,0,0,0.5);
@@ -317,7 +320,7 @@
             justify-content: space-between;
             padding: 14px 18px;
             background: #202124;
-            border-bottom: 1px solid #5f6368;
+            border-bottom: 1px solid #3c4043;
         }
 
         .gd-modal-title {
@@ -347,7 +350,7 @@
             gap: 8px;
             padding: 14px 18px;
             background: #202124;
-            border-top: 1px solid #5f6368;
+            border-top: 1px solid #3c4043;
             justify-content: flex-end;
         }
 
@@ -471,6 +474,178 @@
             background: #5f6368;
             border-radius: 3px;
         }
+
+        /* ========== MOBILE RESPONSIVE ========== */
+        @media (max-width: 768px) {
+            .gd-container {
+                position: static;
+            }
+
+            .gd-btn {
+                padding: 10px 14px;
+                font-size: 14px;
+                min-height: 44px;
+            }
+
+            /* Panel as bottom sheet */
+            .gd-panel {
+                position: fixed !important;
+                top: auto !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                max-height: 80vh;
+                border-radius: 16px 16px 0 0;
+                transform: translateY(100%);
+                transition: transform 0.25s ease;
+            }
+            .gd-panel.show {
+                transform: translateY(0);
+            }
+
+            .gd-panel-header {
+                padding: 16px;
+            }
+            .gd-panel-title {
+                font-size: 16px;
+            }
+            .gd-panel-close {
+                font-size: 24px;
+                padding: 8px;
+            }
+
+            /* Larger touch targets for operators */
+            .gd-operators {
+                padding: 12px;
+                gap: 8px;
+            }
+            .gd-op-btn {
+                padding: 10px 14px;
+                font-size: 13px;
+                min-height: 40px;
+            }
+
+            /* Tabs */
+            .gd-tabs {
+                padding: 10px 12px;
+                gap: 6px;
+            }
+            .gd-tab {
+                padding: 8px 12px;
+                font-size: 12px;
+                min-height: 36px;
+            }
+
+            /* Dork items */
+            .gd-dorks {
+                max-height: 40vh;
+            }
+            .gd-dork-item {
+                padding: 14px 16px;
+            }
+            .gd-dork-name {
+                font-size: 15px;
+            }
+            .gd-dork-query {
+                font-size: 12px;
+                margin-top: 6px;
+            }
+
+            /* Actions */
+            .gd-actions {
+                padding: 14px 16px;
+            }
+            .gd-action-btn {
+                padding: 12px 16px;
+                font-size: 14px;
+                min-height: 44px;
+            }
+
+            /* Modal - Full screen on mobile */
+            .gd-modal {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+
+            .gd-modal-header {
+                padding: 16px;
+            }
+            .gd-modal-title {
+                font-size: 18px;
+            }
+            .gd-modal-close {
+                font-size: 28px;
+                padding: 8px;
+            }
+
+            .gd-modal-body {
+                padding: 16px;
+                max-height: calc(100vh - 160px);
+            }
+
+            .gd-form-label {
+                font-size: 12px;
+                margin-bottom: 8px;
+            }
+            .gd-form-input {
+                padding: 12px 14px;
+                font-size: 16px;
+                min-height: 44px;
+            }
+
+            .gd-form-row {
+                flex-direction: column;
+            }
+
+            .gd-preview {
+                padding: 14px;
+                font-size: 13px;
+                min-height: 48px;
+            }
+
+            .gd-modal-footer {
+                padding: 14px 16px;
+            }
+
+            /* Saved dorks */
+            .gd-saved-item {
+                padding: 14px;
+                flex-wrap: wrap;
+            }
+            .gd-saved-name {
+                font-size: 15px;
+            }
+            .gd-saved-query {
+                font-size: 12px;
+            }
+            .gd-saved-actions {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 10px;
+                justify-content: flex-end;
+            }
+            .gd-saved-actions button {
+                padding: 10px 14px;
+                font-size: 13px;
+                min-height: 40px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 400px) {
+            .gd-btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            .gd-op-btn {
+                padding: 8px 10px;
+                font-size: 11px;
+            }
+        }
     `);
 
   // ============================================
@@ -535,7 +710,7 @@
     // Toggle button
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'gd-btn';
-    toggleBtn.innerHTML = '🔍 Dorking ▾';
+    toggleBtn.innerHTML = '<span class="gd-toggle"></span><span>Dorking</span><span style="font-size:10px;opacity:0.6;margin-left:2px">▾</span>';
 
     // Panel
     const panel = document.createElement('div');
@@ -544,7 +719,7 @@
     // Panel Header
     panel.innerHTML = `
             <div class="gd-panel-header">
-                <span class="gd-panel-title">🔍 Google Dorking Toolkit</span>
+                <span class="gd-panel-title">Dorking Toolkit</span>
                 <button class="gd-panel-close">×</button>
             </div>
         `;
